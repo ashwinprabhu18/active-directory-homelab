@@ -9,7 +9,7 @@ I built an Active Directory domain on VMware to practice everyday IT administrat
 ## Progress
 - [x] Phase 1: Domain controller and DNS
 - [x] Phase 2: OUs, users and groups (Spider-Man themed)
-- [ ] Phase 3: PowerShell user lifecycle automation (joiner done; mover and leaver next)
+- [x] Phase 3: PowerShell user lifecycle automation (joiner done; mover and leaver next)
 - [ ] Phase 4: Join a Windows 11 client
 - [ ] Phase 5: Group Policy
 - [ ] Phase 6: Attack practice for PNPT
@@ -69,7 +69,42 @@ The first run had a bug: a broken line continuation (backtick) on `-Path` split 
 ![Users verified](screenshots/phase3-09a-verify-users-and-groups.png)
 ![Group membership verified](screenshots/phase3-09b-verify-group-membership.png)
 
-### Mover and leaver
 
-Next: move Harry Osborn from Sales to Finance (swap his group, not just his department label), and offboard Norman Osborn (disable, remove groups, move to a Disabled OU).
+### Mover
 
+Ticket: Harry Osborn moves from Sales to Finance. I did it by hand first: change his department and title, remove him from the Sales group and add him to Finance. Changing only the department would leave him with Sales access, which is privilege creep.
+
+Then I wrote [mover.ps1](scripts/mover.ps1). It takes the user, new department and new title as parameters, looks up the user's current department in AD (so the old group can't be forgotten or mistyped), and stops before changing anything if the new department has no group. I tested it by moving Otto Octavius from Sales to IT-Support, and by passing a misspelled department ("IT Support") to check that it refuses and leaves the user untouched.
+
+```powershell
+.\mover.ps1 -User ooctavius -NewDepartment "IT-Support" -NewTitle "Junior Systems Administrator"
+```
+
+![Mover by hand](screenshots/phase3-10-mover-hosborn-manual.png)
+![Mover script](screenshots/phase3-12-mover-script-ooctavius.png)
+![Mover script refuses a misspelled department](screenshots/phase3-13-mover-script-validation.png)
+
+### Leaver
+
+Ticket: Norman Osborn has left. By hand, I disabled the account first (that cuts access straight away), removed all his groups, wrote the date and reason in his description, and moved him to a new LAB-Disabled OU. I disable leavers instead of deleting them: deleting removes the account's SID, so file ownership, mailbox access and audit history would no longer link to the person.
+
+[leaver.ps1](scripts/leaver.ps1) does the same steps. It reads the user's groups from AD rather than relying on someone typing them, so a user who built up many groups over the years is cleaned up just as fully. I tested it on Betty Brant.
+
+```powershell
+.\leaver.ps1 -User bbrant -Reason "resigned"
+```
+
+![Leaver by hand](screenshots/phase3-11-leaver-nosborn-manual.png)
+![Leaver script](screenshots/phase3-14-leaver-script-bbrant.png)
+
+### Rehire
+
+Ticket: Betty is coming back. Because her account was disabled and not deleted, I reused it instead of creating a new one: moved it back to LAB-Users, set a temporary password with a change at next logon, enabled it and added her back to IT-Support. Creating a second account for the same person would leave two identities for one human, which is an audit and security problem.
+
+![Rehire](screenshots/phase3-15-rehire-bbrant.png)
+
+### What I'd improve next
+
+- Stop on the first error (`$ErrorActionPreference = 'Stop'` with try/catch), so a failed step can't leave a half-built account while the script still reports success
+- Make the joiner's CSV path a parameter
+- Log every change to a file as well as the screen
