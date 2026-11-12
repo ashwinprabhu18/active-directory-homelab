@@ -9,7 +9,7 @@ I built an Active Directory domain on VMware to practice everyday IT administrat
 ## Progress
 - [x] Phase 1: Domain controller and DNS
 - [x] Phase 2: OUs, users and groups (Spider-Man themed)
-- [x] Phase 3: PowerShell user lifecycle automation (joiner done; mover and leaver next)
+- [x] Phase 3: PowerShell user lifecycle automation (joiner done; mover, leaver, rehire)
 - [ ] Phase 4: Join a Windows 11 client
 - [ ] Phase 5: Group Policy
 - [ ] Phase 6: Attack practice for PNPT
